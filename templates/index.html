@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>i3-look — Public Profile Intelligence</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --border: #2e2e2e;
+      --accent: #00a8e8;
+      --text: #f1f5f9;
+      --muted: #9aa4b2;
+      --ok: #10b981;
+      --err: #ff4757;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .wrap { max-width: 760px; margin: 32px auto; padding: 0 16px; }
+    header { margin-bottom: 20px; }
+    h1 { margin: 0; font-size: 26px; color: var(--accent); letter-spacing: 1px; }
+    h2 { margin: 0 0 14px; font-size: 16px; color: var(--text); }
+    .tag { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    label { display: block; margin-bottom: 8px; color: var(--muted); font-size: 13px; }
+    .row { display: flex; gap: 8px; }
+    input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      background: #151515;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font: inherit;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+    button, .button {
+      display: inline-block;
+      padding: 10px 16px;
+      background: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 4px;
+      color: #06121a;
+      font: inherit;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: default; }
+    .mini { padding: 7px 11px; font-size: 12px; }
+    .hint { margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+    .error { margin: 12px 0 0; color: var(--err); font-size: 13px; }
+    .notice {
+      background: rgba(255, 71, 87, 0.08);
+      border: 1px solid #5a2a31;
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .notice strong { color: var(--err); }
+    .notice .links { margin-top: 10px; }
+    .avatar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 18px; }
+    .avatar {
+      width: 96px;
+      height: 96px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      object-fit: cover;
+      background: #151515;
+    }
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .badge {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 5px 9px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .badge.ok { color: var(--ok); border-color: #1f4a3c; }
+    .badge.bad { color: var(--err); border-color: #4a2328; }
+    .badge.info { color: var(--accent); border-color: #164252; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+    .stat { border: 1px solid var(--border); border-radius: 4px; padding: 12px; }
+    .stat span { display: block; color: var(--muted); font-size: 12px; }
+    .stat strong { display: block; margin-top: 4px; font-size: 20px; color: var(--accent); }
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      text-align: left;
+      vertical-align: top;
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    th { width: 140px; color: var(--muted); font-weight: 500; }
+    td { word-break: break-word; }
+    .cell-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    a { color: var(--accent); }
+    .links { display: flex; flex-wrap: wrap; gap: 10px; }
+    .meta { margin: 14px 0 0; color: var(--muted); font-size: 12px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .recent { display: flex; flex-wrap: wrap; gap: 8px; }
+    .recent button {
+      background: transparent;
+      color: var(--accent);
+      border-color: var(--border);
+      padding: 6px 10px;
+      font-weight: 400;
+    }
+    .empty { color: var(--muted); font-size: 13px; }
+    footer { color: var(--muted); font-size: 12px; text-align: center; padding: 8px 0 24px; }
+    h3 { margin: 18px 0 8px; font-size: 13px; color: var(--muted); }
+    @media (max-width: 520px) {
+      .row { flex-direction: column; }
+      th { width: 110px; }
+      .grid3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1>i3-look</h1>
+      <p class="tag">A-to-Z public profile intelligence · ethical OSINT · low RAM</p>
+    </header>
+
+    <section class="card">
+      <form id="form" novalidate>
+        <label for="user">Instagram username</label>
+        <div class="row">
+          <input id="user" type="text" maxlength="30" autocomplete="off"
+                 spellcheck="false" placeholder="username" required>
+          <button id="submit" type="submit">Look up</button>
+        </div>
+        <p class="hint">1–30 letters, numbers, dots or underscores. Leading @ is optional.</p>
+        <p id="error" class="error" hidden></p>
+      </form>
+    </section>
+
+    <section id="result" class="card" hidden>
+      <h2>Profile intelligence</h2>
+
+      <div id="notice" class="notice" hidden>
+        <strong>Lookup notice</strong>
+        <p id="notice_text" class="hint"></p>
+        <div id="notice_links" class="links"></div>
+      </div>
+
+      <div class="avatar-row">
+        <img id="avatar" class="avatar" alt="Public profile picture" loading="lazy"
+             referrerpolicy="no-referrer" hidden>
+        <div>
+          <p id="avatar_note" class="hint">No public avatar available.</p>
+          <a id="dp_download" class="button mini" href="#" download hidden>Download HD Photo (DP)</a>
+        </div>
+      </div>
+
+      <div class="badges">
+        <span id="badge_privacy" class="badge">Privacy: —</span>
+        <span id="badge_verified" class="badge">Standard</span>
+        <span id="badge_ratio" class="badge info">Ratio: —</span>
+      </div>
+
+      <div class="grid3">
+        <div class="stat"><span>Followers</span><strong id="m_followers">—</strong></div>
+        <div class="stat"><span>Following</span><strong id="m_following">—</strong></div>
+        <div class="stat"><span>Total Posts</span><strong id="m_posts">—</strong></div>
+      </div>
+
+      <h3>A-to-Z metadata</h3>
+      <table>
+        <tbody>
+          <tr><th>Full Name</th><td id="full_name">—</td></tr>
+          <tr><th>@Username</th><td id="username">—</td></tr>
+          <tr><th>User ID</th><td id="user_id">—</td></tr>
+          <tr><th>Category / Type</th><td id="category">—</td></tr>
+          <tr><th>Account Status</th><td id="status">—</td></tr>
+          <tr><th>Bio Summary</th><td id="bio">—</td></tr>
+          <tr><th>Extracted Emails</th><td><div id="emails" class="cell-list">—</div></td></tr>
+          <tr><th>Extracted Links</th><td><div id="links" class="cell-list">—</div></td></tr>
+          <tr><th>@Mentions</th><td><div id="mentions" class="cell-list">—</div></td></tr>
+          <tr><th>#Hashtags</th><td><div id="hashtags" class="cell-list">—</div></td></tr>
+          <tr><th>Profile Photo</th><td id="photo_url">—</td></tr>
+          <tr><th>Completeness</th><td id="completeness">—</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Quick OSINT links</h3>
+      <div id="osint" class="links"></div>
+
+      <div class="actions">
+        <button id="export" type="button">Export Report (.json)</button>
+      </div>
+      <p id="meta" class="meta"></p>
+    </section>
+
+    <section class="card">
+      <h2>Recent lookups</h2>
+      <div id="recent" class="recent"></div>
+    </section>
+
+    <footer>
+      Ethical OSINT only: public metadata, no authentication bypass, no private data, no stored credentials.
+      Built by <a href="https://github.com/Rg100152/i3-look">Raj Gautam (Open Source Lover)</a> · MIT License 2026.
+    </footer>
+  </main>
+
+  <script>
+    const form = document.getElementById('form');
+    const input = document.getElementById('user');
+    const submit = document.getElementById('submit');
+    const errorBox = document.getElementById('error');
+    const result = document.getElementById('result');
+    const recentBox = document.getElementById('recent');
+    const STORAGE_KEY = 'i3look_recent';
+    let currentReport = null;
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.hidden = false;
+    }
+
+    function clearError() {
+      errorBox.textContent = '';
+      errorBox.hidden = true;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent =
+        (value === null || value === undefined || value === '') ? '—' : String(value);
+    }
+
+    function formatCount(value) {
+      if (value === null || value === undefined) return '—';
+      return Number(value).toLocaleString('en-US');
+    }
+
+    function safeUrl(value) {
+      if (/^https?:\/\//i.test(value)) return value;
+      if (/^www\./i.test(value)) return 'https://' + value;
+      return '';
+    }
+
+    function renderList(id, items, asLinks) {
+      const box = document.getElementById(id);
+      box.textContent = '';
+      if (!items || !items.length) {
+        box.textContent = '—';
+        return;
+      }
+      items.forEach(function (item) {
+        if (asLinks && safeUrl(item)) {
+          const a = document.createElement('a');
+          a.href = safeUrl(item);
+          a.textContent = item;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          box.appendChild(a);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = item;
+          box.appendChild(span);
+        }
+      });
+    }
+
+    function renderOsint(links) {
+      const box = document.getElementById('osint');
+      box.textContent = '';
+      const labels = { instagram: 'Instagram Profile', google: 'Google Dork', wayback: 'WayBack Machine' };
+      Object.keys(labels).forEach(function (key) {
+        const url = links && links[key];
+        if (!url || !safeUrl(url)) return;
+        const a = document.createElement('a');
+        a.href = safeUrl(url);
+        a.textContent = labels[key] + ' ↗';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        box.appendChild(a);
+      });
+    }
+
+    function renderNotice(data) {
+      const box = document.getElementById('notice');
+      const text = document.getElementById('notice_text');
+      const links = document.getElementById('notice_links');
+      links.textContent = '';
+      if (!data.notice && !data.error) {
+        box.hidden = true;
+        return;
+      }
+      text.textContent = [data.notice, data.error].filter(Boolean).join(' ');
+      const labels = { instagram: 'Instagram Profile', google: 'Google Dork', wayback: 'WayBack Machine' };
+      Object.keys(labels).forEach(function (key) {
+        const url = data.osint_links && data.osint_links[key];
+        if (!url || !safeUrl(url)) return;
+        const a = document.createElement('a');
+        a.href = safeUrl(url);
+        a.textContent = labels[key] + ' ↗';
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        links.appendChild(a);
+      });
+      box.hidden = false;
+    }
+
+    function getRecent() {
+      try {
+        const items = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        return Array.isArray(items) ? items : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveRecent(names) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(names.slice(0, 5)));
+      } catch (e) {
+        /* storage disabled - optional feature */
+      }
+    }
+
+    function renderRecent() {
+      recentBox.textContent = '';
+      const names = getRecent();
+      if (!names.length) {
+        const span = document.createElement('span');
+        span.className = 'empty';
+        span.textContent = 'No recent lookups in this browser.';
+        recentBox.appendChild(span);
+        return;
+      }
+      names.forEach(function (name) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = name;
+        button.addEventListener('click', function () {
+          input.value = name;
+          form.requestSubmit();
+        });
+        recentBox.appendChild(button);
+      });
+    }
+
+    function render(data) {
+      currentReport = data;
+
+      setText('full_name', data.full_name);
+      setText('username', '@' + data.username);
+      setText('user_id', data.user_id);
+      setText('category', data.category ? data.category + (data.is_business ? ' (Business)' : '') : (data.is_business ? 'Business' : ''));
+      setText('status', data.status);
+      setText('bio', data.bio);
+      setText('photo_url', data.avatar_hd || '—');
+      setText('completeness', (data.completeness || 0) + '%');
+      document.getElementById('m_followers').textContent = formatCount(data.followers);
+      document.getElementById('m_following').textContent = formatCount(data.following);
+      document.getElementById('m_posts').textContent = formatCount(data.posts);
+
+      const avatar = document.getElementById('avatar');
+      const download = document.getElementById('dp_download');
+      const note = document.getElementById('avatar_note');
+      if (typeof data.avatar_proxy === 'string' && data.avatar_proxy.indexOf('/proxy-image?') === 0) {
+        avatar.src = data.avatar_proxy;
+        avatar.hidden = false;
+        download.href = data.avatar_proxy + '&download=1';
+        download.hidden = false;
+        note.textContent = 'Public avatar loaded through the local proxy (resolution depends on source).';
+      } else {
+        avatar.removeAttribute('src');
+        avatar.hidden = true;
+        download.hidden = true;
+        note.textContent = 'No public avatar available.';
+      }
+
+      const privacy = document.getElementById('badge_privacy');
+      privacy.textContent = 'Privacy: ' + (data.privacy || 'Unknown');
+      privacy.className = 'badge ' + (data.privacy === 'Public' ? 'ok' : 'bad');
+
+      const verified = document.getElementById('badge_verified');
+      verified.textContent = data.verified_text || (data.verified ? 'Verified' : 'Unknown');
+      verified.className = 'badge ' + (data.verified ? 'ok' : (data.verified_text === 'Standard' ? 'bad' : ''));
+
+      document.getElementById('badge_ratio').textContent = 'Ratio: ' + (data.ratio || 'N/A');
+
+      renderList('emails', data.emails, false);
+      renderList('links', data.links, true);
+      renderList('mentions', data.mentions, false);
+      renderList('hashtags', data.hashtags, false);
+      renderOsint(data.osint_links);
+
+      document.getElementById('meta').textContent =
+        'Source: ' + (data.source || 'unknown') +
+        ' · Cached: ' + (data.cached ? 'yes' : 'no');
+      renderNotice(data);
+      result.hidden = false;
+    }
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const username = input.value.trim().replace(/^@+/, '').trim();
+      if (!/^[A-Za-z0-9._]{1,30}$/.test(username)) {
+        showError('Invalid username. Use 1–30 letters, numbers, dots or underscores.');
+        result.hidden = true;
+        return;
+      }
+
+      clearError();
+      submit.disabled = true;
+      submit.textContent = 'Checking…';
+      try {
+        const response = await fetch('/api/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          showError(data.error || 'Lookup failed.');
+          result.hidden = true;
+          return;
+        }
+        render(data);
+        const names = getRecent().filter(function (name) { return name !== username; });
+        names.unshift(username);
+        saveRecent(names);
+        renderRecent();
+      } catch (e) {
+        showError('Network error. Check that the Flask server is running.');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Look up';
+      }
+    });
+
+    document.getElementById('export').addEventListener('click', function () {
+      if (!currentReport) return;
+      const blob = new Blob([JSON.stringify(currentReport, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'i3look_' + currentReport.username + '_report.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    });
+
+    renderRecent();
+  </script>
+</body>
+</html>
